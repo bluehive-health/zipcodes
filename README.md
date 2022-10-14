@@ -1,4 +1,4 @@
-# USA Zip Code Lookups (Data Last Updated December 3rd 2019)
+# USA Zip Code Lookups (Data Last Updated October 14th 2022)
 
 A localized (flatfile) zipcode lookup (USA Only)
 
