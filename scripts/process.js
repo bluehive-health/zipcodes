@@ -17,7 +17,11 @@ var fs = require('fs'),
 var workbook = xlsx.readFile('./ZIP_Locale_Detail.xls');
 var workbook_sheet_name_list = workbook.SheetNames;
 var zip_detail_sheet = xlsx.utils.sheet_to_json(workbook.Sheets[workbook_sheet_name_list[0]]);
-
+for (var i in codes) {
+  if (!codes[i].longitude) {
+    delete codes[i];
+  }
+}
 var clean = function (str) {
   return str.replace(/"/g, '').trimLeft();
 }
@@ -48,30 +52,24 @@ geonamesData.forEach(function (line, num) {
 });
 
 async function getZipData(row) {
-  const urlEncodedAddress = encodeURIComponent(`${row['PHYSICAL DELV ADDR']} ${row['PHYSICAL CITY']} ${row['PHYSICAL ZIP']}`);
+  const urlEncodedAddress = encodeURIComponent(`${row['PHYSICAL DELV ADDR']} ${row['PHYSICAL CITY']} ${row['DELIVERY ZIPCODE']}`);
   try {
-    if ($row['PHYSICAL ZIP'] === '85288') {
-      console.log(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${urlEncodedAddress}&benchmark=2020&format=json`);
-      console.log(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${urlEncodedAddress}&benchmark=2020&format=json`);
-      console.log(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${urlEncodedAddress}&benchmark=2020&format=json`);
-      console.log(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${urlEncodedAddress}&benchmark=2020&format=json`);
-      console.log(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${urlEncodedAddress}&benchmark=2020&format=json`);
-    }
+
     const response = await axiosRateLimit.get(`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${urlEncodedAddress}&benchmark=2020&format=json`, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
     if (response.data.result.addressMatches.length > 0) {
-      console.log('response', response.data.result.addressMatches[0].coordinates);
-      return {
-        zip: row['PHYSICAL ZIP'],
+      zips[row['DELIVERY ZIPCODE']] = {
+        zip: row['DELIVERY ZIPCODE'],
         city: ucfirst(row['PHYSICAL CITY']),
         state: row['PHYSICAL STATE'],
         country: 'US',
         latitude: response.data.result.addressMatches[0].coordinates.y,
         longitude: response.data.result.addressMatches[0].coordinates.x
       };
+      return zips[row['DELIVERY ZIPCODE']];
     }
   } catch (error) {
     console.error('error', error);
@@ -83,18 +81,10 @@ async function getZips() {
   for (const row of zip_detail_sheet) {
     if (!codes[row['DELIVERY ZIPCODE']]) {
       newCount++;
-      console.log('looking up zip code', row['DELIVERY ZIPCODE']);
-      zips[row['DELIVERY ZIPCODE']] = {
-        zip: row['DELIVERY ZIPCODE'],
-        city: ucfirst(row['PHYSICAL CITY']),
-        state: row['PHYSICAL STATE'],
-        country: 'US'
-      };
+
       promises.push(getZipData(row));
-    } else {
-      console.log('zip code already exists', row['DELIVERY ZIPCODE']);
+      console.log('newCount', newCount);
     }
-    console.log('newCount', newCount);
   }
   const results = await Promise.all(promises);
   results.forEach(result => {
@@ -135,5 +125,4 @@ async function getZips() {
 
   fs.writeFileSync(path.join('../', 'lib', 'codes.js'), str, 'utf8');
 }
-
 getZips();
