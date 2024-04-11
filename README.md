@@ -1,5 +1,7 @@
 # USA Zip Code Lookups (Data Last Updated April 10th, 2024)
 
+https://www.npmjs.com/package/@bluehive/zipcodes
+
 A localized (flatfile) zipcode lookup (USA Only)
 
 USA zip codes from: https://postalpro.usps.com/ZIP_Locale_Detail
