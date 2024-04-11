@@ -1,7 +1,7 @@
 {
   "name": "bluehive-zipcodes",
   "description": "Useful zipcode database with helper methods (updated)",
-  "version": "8.0.2",
+  "version": "8.0.3",
   "author": "Dav Glass <davglass@gmail.com>",
   "bugs": {
     "web": "https://github.com/bluehive-health/zipcodes/issues"
@@ -16,7 +16,10 @@
     "test": "istanbul cover --print both -- vows --spec ./tests/lookup.js"
   },
   "devDependencies": {
+    "axios": "^1.6.8",
+    "axios-rate-limit": "^1.3.0",
     "istanbul": "^0.4.5",
-    "vows": "^0.8.3"
+    "vows": "^0.8.3",
+    "xlsx": "^0.18.5"
   }
 }
