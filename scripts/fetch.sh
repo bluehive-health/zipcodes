@@ -25,7 +25,7 @@ fi
 
 if [ ! -f ./ZIP_Locale_Detail.xls ]; then
   echo "fetching usps zipcodes"
-  $wget -nv "https://postalpro.usps.com/mnt/glusterfs/2024-04/ZIP_Locale_Detail.xls"
+  $wget -nv "https://postalpro.usps.com/mnt/glusterfs/2025-06/ZIP_Locale_Detail.xls"
 fi
 
 wait
