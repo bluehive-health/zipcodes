@@ -1,5 +1,5 @@
 {
-  "name": "@bluehive/zipcodes",
+  "name": "@bluehive-health/zipcodes",
   "description": "Useful zipcode database with helper methods (updated)",
   "version": "8.0.5",
   "author": "Dav Glass <davglass@gmail.com>",
@@ -16,7 +16,7 @@
     "test": "istanbul cover --print both -- vows --spec ./tests/lookup.js"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/@bluehive"
+    "registry": "https://npm.pkg.github.com"
   },
   "devDependencies": {
     "axios": "^1.6.8",
