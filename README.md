@@ -1,4 +1,4 @@
-# USA Zip Code Lookups (Data Last Updated April 10th, 2024)
+# USA Zip Code Lookups (Data Last Updated June 3rd, 2025)
 
 https://www.npmjs.com/package/@bluehive/zipcodes
 
