@@ -16,7 +16,7 @@
     "test": "istanbul cover --print both -- vows --spec ./tests/lookup.js"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
+    "registry": "https://npm.pkg.github.com/@bluehive"
   },
   "devDependencies": {
     "axios": "^1.6.8",
