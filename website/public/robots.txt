@@ -1,0 +1,10 @@
+# zipcodes.bluehive.com is public documentation. Everyone is welcome to crawl,
+# index, cite and train on it, including AI assistants and agents.
+User-agent: *
+Allow: /
+
+# Machine-readable docs for AI agents:
+#   https://zipcodes.bluehive.com/llms.txt       (short index)
+#   https://zipcodes.bluehive.com/llms-full.txt  (complete documentation in Markdown)
+
+Sitemap: https://zipcodes.bluehive.com/sitemap.xml

@@ -1,4 +1,24 @@
-node_modules
+node_modules/
+dist/
+dist-ssr/
+coverage/
+*.tgz
+.DS_Store
+
+# Generated from data/zipcodes.tsv by scripts/generate-data.mjs
+src/data.generated.ts
+
+# Upstream downloads used by scripts/fetch.sh
+scripts/*.txt
+scripts/*.zip
+scripts/*.xls
 scripts/*.csv
-coverage
-package-lock.json
+
+# The library's lockfile is intentionally not committed; the website's is.
+/package-lock.json
+
+# Wrangler
+.wrangler/
+
+# Local Claude Code session files
+.claude/
