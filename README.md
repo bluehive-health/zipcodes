@@ -130,3 +130,22 @@ To run the very simple test suite:
 ```
 make tests
 ```
+
+## Releasing
+
+Releases are published to the GitHub Package Registry (`npm.pkg.github.com`) by
+[`.github/workflows/publish.yml`](.github/workflows/publish.yml). The **release tag decides the
+published version**: the workflow sets `package.json` to the tag's version before running
+`npm publish`, so a forgotten version bump can no longer cause a `409 Cannot publish over existing version`.
+
+1. Pick the next version that hasn't been published yet (e.g. `8.0.7`).
+2. Create a GitHub release with the tag `v8.0.7` (format `vX.Y.Z`; a bare `X.Y.Z` also works).
+   Mark it as a pre-release, or use a tag like `v9.0.0-beta.1`, to publish under the `next`
+   dist-tag instead of `latest`.
+3. The workflow validates the tag, fails early if that version already exists in the registry,
+   runs the tests, and publishes.
+4. If `package.json` on `master` is behind, the workflow opens a `chore: bump version to X.Y.Z`
+   PR. Merge it to keep the repo in sync.
+
+To publish an existing tag again after a failed run (for example, after fixing the workflow), run the
+**Publish to GitHub Package Registry** workflow manually from the Actions tab and enter the tag.
