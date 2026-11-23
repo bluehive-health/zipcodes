@@ -176,9 +176,11 @@ The **release tag decides the published version**: the workflow sets `package.js
 5. If `package.json` on `master` is behind, the workflow opens a `chore: bump version to X.Y.Z`
    PR. Merge it to keep the repo in sync.
 
-To publish an existing tag again after a failed run (for example, after fixing the workflow), run the
-**Publish package** workflow manually from the Actions tab and enter the tag. Registries that already
-have that version are skipped.
+To publish an existing tag again after a failed run, run the **Publish package** workflow manually
+from the Actions tab with **Use workflow from** set to that tag, and enter the same tag. Registries that
+already have that version are skipped. The run must be for the tag's own commit so that npm provenance
+points at the right source; the workflow refuses otherwise. This also means a retry uses the workflow
+file as it was at that tag, so to pick up workflow fixes, cut a new release instead.
 
 ### npmjs: staged publishing
 
