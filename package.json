@@ -1,7 +1,7 @@
 {
   "name": "@bluehive-health/zipcodes",
   "description": "Useful zipcode database with helper methods (updated)",
-  "version": "8.0.5",
+  "version": "8.0.6",
   "author": "BlueHive Health (https://github.com/bluehive-health)",
   "contributors": [
     "Dav Glass <davglass@gmail.com>"
@@ -13,7 +13,7 @@
   "license": "BSD",
   "repository": {
     "type": "git",
-    "url": "https://github.com/bluehive-health/zipcodes.git"
+    "url": "git+https://github.com/bluehive-health/zipcodes.git"
   },
   "scripts": {
     "test": "istanbul cover --print both -- vows --spec ./tests/lookup.js"
@@ -27,5 +27,8 @@
     "istanbul": "^0.4.5",
     "vows": "^0.8.3",
     "xlsx": "^0.18.5"
-  }
+  },
+  "files": [
+    "lib/"
+  ]
 }

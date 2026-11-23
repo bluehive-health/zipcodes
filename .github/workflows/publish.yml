@@ -1,27 +1,142 @@
 name: Publish to GitHub Package Registry
 
+# The release tag is the source of truth for the published version.
+# Publishing release `v1.2.3` (or `1.2.3`) publishes @bluehive-health/zipcodes@1.2.3,
+# regardless of the version currently committed in package.json.
+
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing release tag to publish (e.g. v8.0.6)'
+        required: true
+        type: string
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the version-bump branch
+      packages: write # publish to npm.pkg.github.com
+      pull-requests: write # open the version-bump PR
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           registry-url: 'https://npm.pkg.github.com/'
-          token: ${{ secrets.GITHUB_TOKEN }}
+          scope: '@bluehive-health'
 
-      - name: Install dependencies
-        run: npm install
+      # Uses the semver package bundled with npm for strict SemVer validation.
+      - name: Resolve version from tag
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          SEMVER="$(npm root -g)/npm/node_modules/semver"
+          VERSION=$(node -e 'const s = require(process.argv[1]); process.stdout.write(s.valid(process.argv[2]) || "")' "$SEMVER" "$TAG")
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Tag '$TAG' is not a valid SemVer version (expected vX.Y.Z or X.Y.Z)."
+            exit 1
+          fi
+          # Manual runs have no release payload, so read the release's pre-release flag from GitHub.
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            PRERELEASE="$RELEASE_PRERELEASE"
+          elif ! PRERELEASE=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease); then
+            echo "::error::No GitHub release found for tag '$TAG'."
+            exit 1
+          fi
+          if [[ "$PRERELEASE" == "true" || "$VERSION" == *-* ]]; then
+            DIST_TAG=next
+          else
+            DIST_TAG=latest
+          fi
+          {
+            echo "version=$VERSION"
+            echo "dist_tag=$DIST_TAG"
+            echo "semver=$SEMVER"
+          } >> "$GITHUB_OUTPUT"
+          echo "Publishing version $VERSION with dist-tag '$DIST_TAG' (from tag '$TAG')"
 
-      - name: Publish package
-        run: npm publish
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
+
+      - name: Fail if version is already published
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          if npm view "$NAME@$VERSION" version 2>/dev/null | grep -qx "$VERSION"; then
+            echo "::error::$NAME@$VERSION is already published. Bump the version and cut a new release (e.g. a higher patch number)."
+            exit 1
+          fi
+
+      - name: Set package version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      # No lockfile is committed (package-lock.json is gitignored), so `npm ci` is not an option.
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Test
+        run: npm test
+
+      - name: Publish package
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --tag "${{ steps.version.outputs.dist_tag }}"
+
+      # master is protected, so instead of pushing directly we open a PR that
+      # syncs package.json with what was just published. Best effort: a failure
+      # here does not undo or fail the publish.
+      - name: Open PR to sync package.json version
+        if: steps.version.outputs.dist_tag == 'latest'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'master' }}
+          SEMVER: ${{ steps.version.outputs.semver }}
+        run: |
+          BRANCH="chore/bump-version-$VERSION"
+          git fetch --no-tags origin "$DEFAULT_BRANCH"
+          # --force discards the publish-time package.json edit so we read the branch's real version.
+          git checkout --force -B "$BRANCH" "origin/$DEFAULT_BRANCH"
+          CURRENT=$(node -p "require('./package.json').version")
+          CMP=$(node -e 'const s = require(process.argv[1]); process.stdout.write(String(s.compare(process.argv[2], process.argv[3])))' "$SEMVER" "$VERSION" "$CURRENT")
+          if [[ "$CMP" == "0" ]]; then
+            echo "package.json on $DEFAULT_BRANCH is already $VERSION; nothing to sync."
+            exit 0
+          fi
+          if [[ "$CMP" == "-1" ]]; then
+            echo "package.json on $DEFAULT_BRANCH ($CURRENT) is newer than $VERSION; not downgrading."
+            exit 0
+          fi
+          npm version "$VERSION" --no-git-tag-version
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore: bump version to $VERSION"
+          git push --force origin "$BRANCH"
+          if [[ -z "$(gh pr list --head "$BRANCH" --state open --json number --jq '.[].number')" ]]; then
+            gh pr create --base "$DEFAULT_BRANCH" --head "$BRANCH" \
+              --title "chore: bump version to $VERSION" \
+              --body "Syncs \`package.json\` with \`@bluehive-health/zipcodes@$VERSION\`, published from release \`$TAG\`."
+          fi
