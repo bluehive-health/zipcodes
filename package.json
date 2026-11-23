@@ -1,6 +1,6 @@
 {
   "name": "@bluehive-health/zipcodes",
-  "version": "8.0.8",
+  "version": "9.0.0",
   "description": "Offline US ZIP code lookup for Node.js and TypeScript: city, state and coordinates for every ZIP, plus distance, radius search, reverse geocoding and city autocomplete. Zero dependencies, no API key.",
   "keywords": [
     "zip",
