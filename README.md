@@ -269,8 +269,15 @@ Treat `codes` and the records returned by every function as read-only. They're s
 Types ship with the package. No `@types` install is needed.
 
 ```ts
-import { lookup, type ZipCode, type NearestResult, type CityMatch } from '@bluehive/zipcodes';
+import { lookup, nearest, type ZipCode, type NearestResult } from '@bluehive/zipcodes';
 
+const record: ZipCode | undefined = lookup('00801');
+const closest: NearestResult[] = nearest(40.7128, -74.006, 3);
+```
+
+The exported types:
+
+```ts
 interface ZipCode {
     zip: string;       // always a string, so leading zeros survive
     latitude: number;
@@ -280,7 +287,8 @@ interface ZipCode {
     country: string;   // always 'US'
 }
 
-const record: ZipCode | undefined = lookup('00801');
+interface NearestResult { code: ZipCode; miles: number }
+interface CityMatch { city: string; state: string; zips: string[] }
 ```
 
 ## Data
