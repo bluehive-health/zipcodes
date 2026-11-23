@@ -33,6 +33,8 @@ npm install @bluehive-health/zipcodes
 
 ```
 const zipcodes = require('@bluehive/zipcodes');
+// or, if you installed from GitHub Packages:
+// const zipcodes = require('@bluehive-health/zipcodes');
 ```
 
 ### Zipcode Lookup
