@@ -66,7 +66,8 @@ function NotFound({ children }: { children: ReactNode }) {
     );
 }
 
-const quote = (value: string) => `'${value.replace(/'/g, "\\'")}'`;
+/** Formats user input as a JavaScript string literal for the "code being run" display. */
+const quote = (value: string) => `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
 function LookupDemo({ lib }: { lib: Zipcodes }) {
     const [zip, setZip] = useState('90210');
