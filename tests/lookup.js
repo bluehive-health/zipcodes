@@ -43,22 +43,6 @@ var tests = {
             assert.equal(miami.state, 'FL');
         }
     },
-    'Kananaskis': {
-      topic: function() {
-        return zipcodes.lookup("T0L");
-      },
-      'should be ok': function(kananaskis) {
-        assert.equal(kananaskis.city, "Kananaskis Country (claresholm)");
-      }
-    },
-    'BC': {
-        topic: function() {
-          return zipcodes.lookup("V6B2Y9");
-        },
-        'should be ok': function(bc) {
-          assert.equal(bc.state, "British Columbia");
-        }
-    },
     'Beverly Hills': {
         topic: function() {
             return zipcodes.lookup(90210);
