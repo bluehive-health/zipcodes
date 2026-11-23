@@ -30,36 +30,51 @@ jobs:
       pull-requests: write # open the version-bump PR
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
-      PRERELEASE: ${{ github.event.release.prerelease || false }}
     steps:
-      - name: Resolve version from tag
-        id: version
-        run: |
-          if [[ ! "$TAG" =~ ^v?(([0-9]+)\.([0-9]+)\.([0-9]+)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$ ]]; then
-            echo "::error::Tag '$TAG' is not a valid semver version (expected vX.Y.Z or X.Y.Z)."
-            exit 1
-          fi
-          VERSION="${BASH_REMATCH[1]}"
-          if [[ "$PRERELEASE" == "true" || -n "${BASH_REMATCH[5]}" ]]; then
-            DIST_TAG=next
-          else
-            DIST_TAG=latest
-          fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "dist_tag=$DIST_TAG" >> "$GITHUB_OUTPUT"
-          echo "Publishing version $VERSION with dist-tag '$DIST_TAG' (from tag '$TAG')"
-
-      - name: Checkout tag
-        uses: actions/checkout@v4
-        with:
-          ref: refs/tags/${{ env.TAG }}
-
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
           registry-url: 'https://npm.pkg.github.com/'
           scope: '@bluehive-health'
+
+      # Uses the semver package bundled with npm for strict SemVer validation.
+      - name: Resolve version from tag
+        id: version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          SEMVER="$(npm root -g)/npm/node_modules/semver"
+          VERSION=$(node -e 'const s = require(process.argv[1]); process.stdout.write(s.valid(process.argv[2]) || "")' "$SEMVER" "$TAG")
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Tag '$TAG' is not a valid SemVer version (expected vX.Y.Z or X.Y.Z)."
+            exit 1
+          fi
+          # Manual runs have no release payload, so read the release's pre-release flag from GitHub.
+          if [[ "$EVENT_NAME" == "release" ]]; then
+            PRERELEASE="$RELEASE_PRERELEASE"
+          elif ! PRERELEASE=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isPrerelease --jq .isPrerelease); then
+            echo "::error::No GitHub release found for tag '$TAG'."
+            exit 1
+          fi
+          if [[ "$PRERELEASE" == "true" || "$VERSION" == *-* ]]; then
+            DIST_TAG=next
+          else
+            DIST_TAG=latest
+          fi
+          {
+            echo "version=$VERSION"
+            echo "dist_tag=$DIST_TAG"
+            echo "semver=$SEMVER"
+          } >> "$GITHUB_OUTPUT"
+          echo "Publishing version $VERSION with dist-tag '$DIST_TAG' (from tag '$TAG')"
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.TAG }}
 
       - name: Fail if version is already published
         env:
@@ -98,17 +113,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
-          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch || 'master' }}
+          SEMVER: ${{ steps.version.outputs.semver }}
         run: |
           BRANCH="chore/bump-version-$VERSION"
           git fetch --no-tags origin "$DEFAULT_BRANCH"
-          git checkout -B "$BRANCH" "origin/$DEFAULT_BRANCH"
+          # --force discards the publish-time package.json edit so we read the branch's real version.
+          git checkout --force -B "$BRANCH" "origin/$DEFAULT_BRANCH"
           CURRENT=$(node -p "require('./package.json').version")
-          if [[ "$CURRENT" == "$VERSION" ]]; then
+          CMP=$(node -e 'const s = require(process.argv[1]); process.stdout.write(String(s.compare(process.argv[2], process.argv[3])))' "$SEMVER" "$VERSION" "$CURRENT")
+          if [[ "$CMP" == "0" ]]; then
             echo "package.json on $DEFAULT_BRANCH is already $VERSION; nothing to sync."
             exit 0
           fi
-          if [[ "$(printf '%s\n%s\n' "$CURRENT" "$VERSION" | sort -V | tail -n1)" != "$VERSION" ]]; then
+          if [[ "$CMP" == "-1" ]]; then
             echo "package.json on $DEFAULT_BRANCH ($CURRENT) is newer than $VERSION; not downgrading."
             exit 0
           fi
