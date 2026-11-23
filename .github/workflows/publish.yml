@@ -32,11 +32,13 @@ jobs:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
     steps:
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24'
           registry-url: 'https://npm.pkg.github.com/'
           scope: '@bluehive-health'
+          # Never restore a dependency cache in the release job (cache-poisoning risk).
+          package-manager-cache: false
 
       # Uses the semver package bundled with npm for strict SemVer validation.
       - name: Resolve version from tag
@@ -72,7 +74,7 @@ jobs:
           echo "Publishing version $VERSION with dist-tag '$DIST_TAG' (from tag '$TAG')"
 
       - name: Checkout tag
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: refs/tags/${{ env.TAG }}
 
