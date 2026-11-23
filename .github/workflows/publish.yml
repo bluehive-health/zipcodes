@@ -1,8 +1,11 @@
-name: Publish to GitHub Package Registry
+name: Publish package
 
 # The release tag is the source of truth for the published version.
-# Publishing release `v1.2.3` (or `1.2.3`) publishes @bluehive-health/zipcodes@1.2.3,
-# regardless of the version currently committed in package.json.
+# Publishing release `v1.2.3` (or `1.2.3`) publishes version 1.2.3, regardless of
+# the version currently committed in package.json, to both registries:
+#   - GitHub Packages: @bluehive-health/zipcodes (the name in package.json)
+#   - npmjs.com:       @bluehive/zipcodes
+# A registry that already has the version is skipped, so a failed run can be retried.
 
 on:
   release:
@@ -28,8 +31,10 @@ jobs:
       contents: write # push the version-bump branch
       packages: write # publish to npm.pkg.github.com
       pull-requests: write # open the version-bump PR
+      id-token: write # npm trusted publishing (OIDC) and provenance
     env:
       TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      NPMJS_NAME: '@bluehive/zipcodes'
     steps:
       - name: Set up Node.js
         uses: actions/setup-node@v7
@@ -78,16 +83,44 @@ jobs:
         with:
           ref: refs/tags/${{ env.TAG }}
 
-      - name: Fail if version is already published
+      # npmjs gets its own npm config so the GitHub Packages registry/auth from
+      # setup-node never applies to it. Auth uses npm trusted publishing (OIDC);
+      # if an NPM_TOKEN secret is set, it is used instead.
+      - name: Write npmjs config
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          NPMRC="$RUNNER_TEMP/npmjs.npmrc"
+          {
+            echo "registry=https://registry.npmjs.org/"
+            echo "@bluehive:registry=https://registry.npmjs.org/"
+            if [[ -n "$NPM_TOKEN" ]]; then
+              # Literal ${NPM_TOKEN}: npm expands it at runtime, so the secret never hits disk.
+              # shellcheck disable=SC2016
+              echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}'
+            fi
+          } > "$NPMRC"
+          echo "NPMJS_USERCONFIG=$NPMRC" >> "$GITHUB_ENV"
+
+      - name: Check which registries already have this version
+        id: existing
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          NAME=$(node -p "require('./package.json').name")
-          if npm view "$NAME@$VERSION" version 2>/dev/null | grep -qx "$VERSION"; then
-            echo "::error::$NAME@$VERSION is already published. Bump the version and cut a new release (e.g. a higher patch number)."
+          GH_NAME=$(node -p "require('./package.json').name")
+          published() { npm view "$1@$VERSION" version 2>/dev/null | grep -qx "$VERSION"; }
+          GITHUB=false; NPMJS=false
+          if published "$GH_NAME"; then GITHUB=true; fi
+          if NPM_CONFIG_USERCONFIG="$NPMJS_USERCONFIG" published "$NPMJS_NAME"; then NPMJS=true; fi
+          echo "GitHub Packages ($GH_NAME@$VERSION): already published=$GITHUB"
+          echo "npmjs ($NPMJS_NAME@$VERSION): already published=$NPMJS"
+          if [[ "$GITHUB" == "true" && "$NPMJS" == "true" ]]; then
+            echo "::error::$VERSION is already published to both registries. Bump the version and cut a new release (e.g. a higher patch number)."
             exit 1
           fi
+          echo "github=$GITHUB" >> "$GITHUB_OUTPUT"
+          echo "npmjs=$NPMJS" >> "$GITHUB_OUTPUT"
 
       - name: Set package version
         env:
@@ -101,10 +134,24 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Publish package
+      - name: Publish to GitHub Packages
+        if: steps.existing.outputs.github != 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish --tag "${{ steps.version.outputs.dist_tag }}"
+          DIST_TAG: ${{ steps.version.outputs.dist_tag }}
+        run: npm publish --tag "$DIST_TAG"
+
+      # Same tarball contents, published under the npmjs name. publishConfig is
+      # removed because it pins the registry to GitHub Packages.
+      - name: Publish to npmjs
+        if: steps.existing.outputs.npmjs != 'true'
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DIST_TAG: ${{ steps.version.outputs.dist_tag }}
+        run: |
+          npm pkg set name="$NPMJS_NAME"
+          npm pkg delete publishConfig
+          NPM_CONFIG_USERCONFIG="$NPMJS_USERCONFIG" npm publish --access public --provenance --tag "$DIST_TAG"
 
       # master is protected, so instead of pushing directly we open a PR that
       # syncs package.json with what was just published. Best effort: a failure
