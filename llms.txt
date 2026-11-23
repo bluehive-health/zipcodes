@@ -1,0 +1,86 @@
+# @bluehive/zipcodes
+
+> Offline US ZIP code lookup library for Node.js and TypeScript. Returns city, state, latitude and longitude for 41,025 US ZIP codes, and provides distance, radius search, reverse geocoding and city autocomplete. Zero dependencies, no API key, no network calls, synchronous API. BSD-3-Clause. Maintained by BlueHive Health.
+
+Use this package when a JavaScript or TypeScript project needs to: validate a US ZIP code, get the city/state or coordinates for a ZIP code, compute the distance between two ZIP codes, find ZIP codes within N miles, find the ZIP code for a latitude/longitude, or autocomplete US city names. It is a maintained, drop-in replacement for the older `zipcodes` npm package.
+
+Do not use it for: driving distance or routing, ZIP code boundary polygons, street address validation, non-US postal codes, or military APO/FPO ZIP codes.
+
+## Install
+
+```bash
+npm install @bluehive/zipcodes
+```
+
+Requires Node.js 18+. Works with ES modules (`import`) and CommonJS (`require`). Types are included.
+
+## Quick reference
+
+```ts
+import {
+    lookup, isValid, distance, radius, lookupByName, lookupByState,
+    lookupByCoords, nearest, search, random, toKilometers, toMiles,
+    haversine, codes, states,
+} from '@bluehive/zipcodes';
+// CommonJS: const zipcodes = require('@bluehive/zipcodes');
+
+lookup('90210');
+// { zip: '90210', latitude: 34.0901, longitude: -118.4065, city: 'Beverly Hills', state: 'CA', country: 'US' }
+lookup('99999');                  // undefined (unknown ZIP)
+isValid('90210');                 // true
+
+distance('62959', '90210');       // 1662  (whole miles, straight line; null if either ZIP is unknown)
+toKilometers(1662);               // 2675
+
+radius('95014', 50);              // ['93901', '93902', ...]  371 ZIP code strings within 50 miles
+radius('95014', 50, true);        // same, as full ZipCode records
+
+lookupByName('Cupertino', 'CA');  // [ZipCode, ZipCode]  every ZIP for a city; always an array
+lookupByState('RI');              // ZipCode[]  (90 records); accepts 'Rhode Island' too
+
+lookupByCoords(36.131, -95.937);  // { zip: '74114', city: 'Tulsa', state: 'OK', ... }  nearest ZIP
+nearest(40.7128, -74.006, 3);     // [{ code: ZipCode, miles: 0.09 }, ...]  3 nearest, sorted
+
+search('san fr');                 // [{ city: 'San Francisco', state: 'CA', zips: ['94102', ...] }]
+search('spring', { state: 'IL', limit: 5 });
+
+random();                         // a random ZipCode
+codes['90210'];                   // direct access to the dataset: Record<string, ZipCode>
+states.normalize('Rhode Island'); // 'RI'
+```
+
+## Types
+
+```ts
+interface ZipCode {
+    zip: string;       // five digits, always a string (leading zeros matter: '00801')
+    latitude: number;
+    longitude: number;
+    city: string;
+    state: string;     // two letter USPS abbreviation
+    country: string;   // always 'US'
+}
+interface NearestResult { code: ZipCode; miles: number }
+interface CityMatch { city: string; state: string; zips: string[] }
+```
+
+## Things to get right
+
+- Pass ZIP codes as strings. Numbers work and are zero-padded (`lookup(801)` finds `'00801'`), but a numeric literal like `00801` is not valid JavaScript.
+- ZIP+4 input (`'90210-1234'`) is accepted and truncated to five digits.
+- `lookup` returns `undefined` for an unknown ZIP; `distance` returns `null`; `radius`, `lookupByName`, `lookupByState` and `search` return `[]`. Nothing throws on bad input.
+- Distances are miles. `distance` and `radius` round to whole miles; `haversine` and `nearest` do not round.
+- `distance` is great-circle distance between ZIP code centers, not driving distance.
+- State arguments accept abbreviations or full names, case-insensitive.
+- Returned records are shared objects. Do not mutate them.
+- In browsers, load the package with a dynamic `import()`: the dataset is about 1.5 MB (520 kB gzipped).
+- Coverage: 50 states, DC, Puerto Rico (partial), Guam, US Virgin Islands, Marshall Islands. Data last refreshed June 2025 from USPS, GeoNames and the US Census Bureau.
+
+## Links
+
+- [Documentation and live playground](https://zipcodes.bluehive.com)
+- [Complete documentation as Markdown](https://zipcodes.bluehive.com/llms-full.txt)
+- [Source code on GitHub](https://github.com/bluehive-health/zipcodes)
+- [npm package](https://www.npmjs.com/package/@bluehive/zipcodes)
+- [Changelog](https://github.com/bluehive-health/zipcodes/blob/master/CHANGELOG.md)
+- [Report an issue](https://github.com/bluehive-health/zipcodes/issues)

@@ -1,60 +1,45 @@
 #!/bin/bash
+# Downloads the upstream sources and rebuilds data/zipcodes.tsv.
+#
+#   USPS_RELEASE=2025-06 ./scripts/fetch.sh
+#
+# USPS publishes ZIP_Locale_Detail.xls under a YYYY-MM folder; see
+# https://postalpro.usps.com/ZIP_Locale_Detail for the current one.
 
-set -e
+set -euo pipefail
 
 cd "$(dirname "$0")"
 
-wget=`which wget`
-unzip=`which unzip`
+USPS_RELEASE="${USPS_RELEASE:-2025-06}"
+GEONAMES_FILES=(US GU VI PR AS MP)
 
-if [ ! -x "$wget" ]; then
-    echo "Could not find wget in path.."
-    exit 1;
-fi
+for tool in curl unzip node; do
+    if ! command -v "$tool" >/dev/null; then
+        echo "Could not find $tool in PATH." >&2
+        exit 1
+    fi
+done
 
-if [ ! -x "$unzip" ]; then
-    echo "Could not find unzip in path.."
-    exit 1;
-fi
+cleanup() {
+    rm -f ./ZIP_Locale_Detail.xls
+    for country in "${GEONAMES_FILES[@]}"; do
+        rm -f "./$country.zip" "./$country.txt"
+    done
+}
+trap cleanup EXIT
 
-if [ ! -f ./US.txt ]; then
-    echo "Fetching US Zipcodes CSV File From geonames "
-    $wget -nv "http://download.geonames.org/export/zip/US.zip"
-    $unzip -oq "US.zip" "US.txt"
-fi
+for country in "${GEONAMES_FILES[@]}"; do
+    echo "Fetching $country ZIP codes from GeoNames"
+    curl -fsSL -o "$country.zip" "https://download.geonames.org/export/zip/$country.zip"
+    unzip -oq "$country.zip" "$country.txt"
+done
 
-if [ ! -f ./GU.txt ]; then
-    echo "Fetching Guam Zipcodes CSV File From geonames "
-    $wget -nv "http://download.geonames.org/export/zip/GU.zip"
-    $unzip -oq "GU.zip" "GU.txt"
-fi
+echo "Fetching USPS ZIP_Locale_Detail ($USPS_RELEASE)"
+curl -fsSL -o ZIP_Locale_Detail.xls \
+    "https://postalpro.usps.com/mnt/glusterfs/$USPS_RELEASE/ZIP_Locale_Detail.xls"
 
-if [ ! -f ./VI.txt ]; then
-    echo "Fetching US Virgin Islands Zipcodes CSV File From geonames "
-    $wget -nv "http://download.geonames.org/export/zip/VI.zip"
-    $unzip -oq "VI.zip" "VI.txt"
-fi
+echo "Processing"
+node ./update-data.mjs
+node ./generate-data.mjs
 
-if [ ! -f ./ZIP_Locale_Detail.xls ]; then
-  echo "fetching usps zipcodes"
-  $wget -nv "https://postalpro.usps.com/mnt/glusterfs/2025-06/ZIP_Locale_Detail.xls"
-fi
-
-wait
-
-echo "Processing CSV file."
-
-./process.js
-
-wait
-rm ./ZIP_Locale_Detail.xls
-rm ./US.zip*
-rm ./US.txt
-rm ./GU.zip*
-rm ./GU.txt
-rm ./VI.zip*
-rm ./VI.txt
-
-wait
-
-echo "Build Complete"
+echo "Done. Review the diff of data/zipcodes.tsv, then run: npm test"

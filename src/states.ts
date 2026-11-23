@@ -1,4 +1,5 @@
-var full = {
+/** Full state / territory names (upper case) mapped to their USPS abbreviation. */
+export const full: Record<string, string> = {
     'ALABAMA': 'AL',
     'ALASKA': 'AK',
     'ARIZONA': 'AZ',
@@ -53,25 +54,36 @@ var full = {
     'WASHINGTON': 'WA',
     'WEST VIRGINIA': 'WV',
     'WISCONSIN': 'WI',
-    'WYOMING': 'WY'
+    'WYOMING': 'WY',
+    'PUERTO RICO': 'PR',
+    'MARSHALL ISLANDS': 'MH'
 };
 
-var abbr = {};
+/**
+ * USPS abbreviation mapped to the full (upper case) name.
+ * Where several names share an abbreviation (e.g. `VI`), the last one in {@link full} wins.
+ */
+export const abbr: Record<string, string> = {};
 
-exports.full = full;
-
-
-for (var i in full) {
-    abbr[full[i]] = i;
+for (const name of Object.keys(full)) {
+    abbr[full[name] as string] = name;
 }
 
-exports.abbr = abbr;
-
-exports.normalize = function(state) {
-    state = state.toUpperCase();
-
-    if (state.length !== 2) {
-        state = full[state];
+/**
+ * Normalize a state name or abbreviation to its upper case USPS abbreviation.
+ *
+ * Any two-character input is treated as an abbreviation and returned upper-cased
+ * without validation. Anything else is looked up as a full name.
+ *
+ * @example
+ * normalize('Illinois'); // 'IL'
+ * normalize('il');       // 'IL'
+ * normalize('Narnia');   // undefined
+ */
+export function normalize(state: string): string | undefined {
+    const upper = String(state).trim().toUpperCase();
+    if (upper.length === 2) {
+        return upper;
     }
-    return state;
+    return Object.prototype.hasOwnProperty.call(full, upper) ? full[upper] : undefined;
 }
