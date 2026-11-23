@@ -1,6 +1,6 @@
 # USA Zip Code Lookups (Data Last Updated June 3rd, 2025)
 
-https://www.npmjs.com/package/@bluehive/zipcodes
+[![npm](https://img.shields.io/npm/v/@bluehive/zipcodes)](https://www.npmjs.com/package/@bluehive/zipcodes)
 
 A localized (flatfile) zipcode lookup (USA Only)
 
@@ -8,10 +8,33 @@ USA zip codes from: https://postalpro.usps.com/ZIP_Locale_Detail
 
 Transformed into a JSON object and then wrapped with some helper methods.
 
+## Installation
+
+From npmjs.com (no auth needed):
+
+```
+npm install @bluehive/zipcodes
+```
+
+The same releases are also published to GitHub Packages as `@bluehive-health/zipcodes`. That registry
+requires a GitHub token with `read:packages`, even for public packages:
+
+```
+# .npmrc
+@bluehive-health:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
+```
+
+```
+npm install @bluehive-health/zipcodes
+```
+
 ## Usage
 
 ```
-const zipcodes = require('zipcodes');
+const zipcodes = require('@bluehive/zipcodes');
+// or, if you installed from GitHub Packages:
+// const zipcodes = require('@bluehive-health/zipcodes');
 ```
 
 ### Zipcode Lookup
@@ -133,19 +156,48 @@ make tests
 
 ## Releasing
 
-Releases are published to the GitHub Package Registry (`npm.pkg.github.com`) by
-[`.github/workflows/publish.yml`](.github/workflows/publish.yml). The **release tag decides the
-published version**: the workflow sets `package.json` to the tag's version before running
+Releases are published by [`.github/workflows/publish.yml`](.github/workflows/publish.yml) to two
+registries with identical contents:
+
+| Registry | Package name |
+| --- | --- |
+| npmjs.com | `@bluehive/zipcodes` |
+| GitHub Packages (`npm.pkg.github.com`) | `@bluehive-health/zipcodes` |
+
+The **release tag decides the published version**: the workflow sets `package.json` to the tag's version before running
 `npm publish`, so a forgotten version bump can no longer cause a `409 Cannot publish over existing version`.
 
 1. Pick the next version that hasn't been published yet (e.g. `8.0.7`).
 2. Create a GitHub release with the tag `v8.0.7` (format `vX.Y.Z`; a bare `X.Y.Z` also works).
    Mark it as a pre-release, or use a tag like `v9.0.0-beta.1`, to publish under the `next`
    dist-tag instead of `latest`.
-3. The workflow validates the tag, fails early if that version already exists in the registry,
-   runs the tests, and publishes.
-4. If `package.json` on `master` is behind, the workflow opens a `chore: bump version to X.Y.Z`
+3. The workflow validates the tag, checks both registries, runs the tests, publishes to GitHub
+   Packages, and **stages** the version on npmjs. It skips a registry that already has the version
+   and fails early only if both do.
+4. Approve the staged version on npmjs (see below).
+5. If `package.json` on `master` is behind, the workflow opens a `chore: bump version to X.Y.Z`
    PR. Merge it to keep the repo in sync.
 
-To publish an existing tag again after a failed run (for example, after fixing the workflow), run the
-**Publish to GitHub Package Registry** workflow manually from the Actions tab and enter the tag.
+To publish an existing tag again after a failed run, run the **Publish package** workflow manually
+from the Actions tab with **Use workflow from** set to that tag, and enter the same tag. Registries that
+already have that version are skipped. The run must be for the tag's own commit so that npm provenance
+points at the right source; the workflow refuses otherwise. This also means a retry uses the workflow
+file as it was at that tag, so to pick up workflow fixes, cut a new release instead.
+
+### npmjs: staged publishing
+
+The npmjs release uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC): no
+token is stored, and every release gets a provenance attestation. The trusted publisher for
+`@bluehive/zipcodes` (repository `bluehive-health/zipcodes`, workflow `publish.yml`) is allowed to
+**stage** versions only. A new version doesn't go live on npmjs until a maintainer approves it with 2FA:
+
+- on npmjs.com, from the package's staged versions, or
+- from a terminal:
+
+  ```
+  npm stage list @bluehive/zipcodes
+  npm stage approve <stage-id>
+  ```
+
+The workflow run's summary shows the staged version and these steps. GitHub Packages is not staged; it
+publishes immediately.
