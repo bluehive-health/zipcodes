@@ -3,7 +3,7 @@
 // which downloads the inputs into this directory first.
 //
 // Sources, in priority order:
-//   1. USPS ZIP_Locale_Detail.xls: ZIP codes we don't have yet are geocoded
+//   1. USPS ZIP_Locale_Detail.xlsx: ZIP codes we don't have yet are geocoded
 //      through the US Census Bureau geocoder using the post office address.
 //   2. GeoNames US.txt, the bulk of the dataset.
 //   3. GeoNames territory files (GU, VI, PR, AS, MP), which are published as
@@ -60,8 +60,9 @@ async function geocode(row) {
         }
         return {
             zip: row['DELIVERY ZIPCODE'],
-            latitude: match.coordinates.y,
-            longitude: match.coordinates.x,
+            // Four decimals (about 11 m), the same precision GeoNames uses.
+            latitude: Number(match.coordinates.y.toFixed(4)),
+            longitude: Number(match.coordinates.x.toFixed(4)),
             city: ucfirst(row['PHYSICAL CITY']),
             state: row['PHYSICAL STATE'],
         };
@@ -71,11 +72,24 @@ async function geocode(row) {
     }
 }
 
-const workbook = xlsx.readFile(new URL('ZIP_Locale_Detail.xls', here).pathname);
+// USPS switched from .xls to .xlsx in 2026; fetch.sh downloads whichever exists.
+const spreadsheet = ['ZIP_Locale_Detail.xlsx', 'ZIP_Locale_Detail.xls']
+    .map((name) => new URL(name, here))
+    .find((url) => existsSync(url));
+if (!spreadsheet) {
+    throw new Error('ZIP_Locale_Detail.xlsx not found; run scripts/fetch.sh');
+}
+const workbook = xlsx.readFile(spreadsheet.pathname);
 const rows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-// Spreadsheet cells can come back as numbers, which lose their leading zeros
-// (801 instead of '00801'). Normalize once so every later step sees dataset keys.
+// Text cells are space-padded to a fixed width. Spreadsheet cells can also come
+// back as numbers, which lose their leading zeros (801 instead of '00801').
+// Normalize once so every later step sees clean values and dataset keys.
 for (const row of rows) {
+    for (const [key, value] of Object.entries(row)) {
+        if (typeof value === 'string') {
+            row[key] = value.trim().replace(/\s+/g, ' ');
+        }
+    }
     row['DELIVERY ZIPCODE'] = String(row['DELIVERY ZIPCODE']).trim().padStart(5, '0');
 }
 const missing = rows.filter((row) => !existing.has(row['DELIVERY ZIPCODE']));
@@ -139,14 +153,18 @@ for (const [zip, record] of existing) {
 
 // --- write ------------------------------------------------------------------
 
-const valid = [...zips.values()].filter(
-    (r) =>
-        /^\d{5}$/.test(r.zip) &&
-        Number.isFinite(r.latitude) &&
-        Number.isFinite(r.longitude) &&
-        r.city &&
-        /^[A-Z]{2}$/.test(r.state),
-);
+// Sorted by ZIP code so the file doesn't reshuffle when an upstream source
+// changes its row order, which keeps the diff of a refresh reviewable.
+const valid = [...zips.values()]
+    .filter(
+        (r) =>
+            /^\d{5}$/.test(r.zip) &&
+            Number.isFinite(r.latitude) &&
+            Number.isFinite(r.longitude) &&
+            r.city &&
+            /^[A-Z]{2}$/.test(r.state),
+    )
+    .sort((a, b) => (a.zip < b.zip ? -1 : 1));
 
 writeFileSync(
     dataFile,

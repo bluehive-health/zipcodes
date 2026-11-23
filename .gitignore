@@ -12,6 +12,7 @@ src/data.generated.ts
 scripts/*.txt
 scripts/*.zip
 scripts/*.xls
+scripts/*.xlsx
 scripts/*.csv
 
 # The library's lockfile is intentionally not committed; the website's is.

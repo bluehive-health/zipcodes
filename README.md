@@ -6,15 +6,15 @@
 [![types: included](https://img.shields.io/badge/types-included-blue)](#typescript)
 [![license: BSD-3-Clause](https://img.shields.io/badge/license-BSD--3--Clause-green)](LICENSE)
 
-**Offline US ZIP code lookups for Node.js and TypeScript.** City, state and coordinates for 41,025 ZIP
+**Offline US ZIP code lookups for Node.js and TypeScript.** City, state and coordinates for 41,198 ZIP
 codes, plus distance, radius search, reverse geocoding and city autocomplete.
 
 - **No API key, no network calls.** The dataset ships in the package and every function is synchronous.
-- **Zero dependencies.** 531 kB to download.
+- **Zero dependencies.** 538 kB to download.
 - **TypeScript types included.** Works with `import` and `require`.
 - **Fast.** About 36 ns per lookup; a 50 mile radius search takes about 0.2 ms.
-- **Current data.** USPS ZIP codes as of June 2025, covering all 50 states, DC, Puerto Rico, Guam, the US
-  Virgin Islands and the Marshall Islands.
+- **Current data.** USPS ZIP codes as of October 2026, covering all 50 states, DC, Puerto Rico, Guam, the US
+  Virgin Islands, American Samoa, the Northern Mariana Islands and the Marshall Islands.
 
 **Docs and live playground: <https://zipcodes.bluehive.com>**
 
@@ -252,7 +252,7 @@ haversine(40.7484, -73.9967, 34.0901, -118.4065); // 2453.2 (miles)
 ### `codes` and `states`
 
 ```js
-Object.keys(codes).length; // 41025
+Object.keys(codes).length; // 41198
 codes['90210'].city;       // 'Beverly Hills'
 
 states.normalize('Rhode Island'); // 'RI'
@@ -299,11 +299,12 @@ interface CityMatch { city: string; state: string; zips: string[] }
 | [GeoNames postal codes](https://download.geonames.org/export/zip/) | Coordinates and city names |
 | [US Census Bureau Geocoder](https://geocoding.geo.census.gov/) | Coordinates for ZIP codes GeoNames lacks |
 
-- **Last refreshed:** June 2025. 41,025 ZIP codes across 55 states and territories.
+- **Last refreshed:** November 2026, from the USPS release of October 2026. 41,198 ZIP codes across 57
+  states and territories.
 - **Coordinates** are the approximate center of each ZIP code. They're good for distance estimates, store
   locators and "near me" search. They aren't delivery points or boundaries.
-- **Not included:** military APO/FPO/DPO ZIP codes, American Samoa, the Northern Mariana Islands, and
-  non-US postal codes. Puerto Rico coverage is partial.
+- **Not included:** military APO/FPO/DPO ZIP codes, Palau, the Federated States of Micronesia, and
+  non-US postal codes.
 - The raw data is one tab-separated file, [`data/zipcodes.tsv`](data/zipcodes.tsv), which you can use from
   any language.
 
@@ -378,7 +379,7 @@ npm run typecheck
 ### Updating the data
 
 ```bash
-USPS_RELEASE=2025-06 npm run data:update
+USPS_RELEASE=2026-10 npm run data:update
 ```
 
 This downloads the USPS and GeoNames files, geocodes any new ZIP codes through the Census Bureau, and

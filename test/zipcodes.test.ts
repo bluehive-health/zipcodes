@@ -61,6 +61,16 @@ describe('lookup', () => {
         expect(lookupByState('Virgin Islands')).toHaveLength(16);
     });
 
+    it('covers Puerto Rico, American Samoa and the Northern Mariana Islands', () => {
+        expect(lookup('00601')).toMatchObject({ city: 'Adjuntas', state: 'PR' });
+        expect(lookupByState('PR')).toHaveLength(177);
+        expect(lookupByState('Puerto Rico')).toHaveLength(177);
+        expect(lookup(96799)).toMatchObject({ city: 'Pago Pago', state: 'AS' });
+        expect(lookupByState('American Samoa')).toHaveLength(1);
+        expect(lookupByState('Northern Mariana Islands').map((z) => z.zip)).toEqual(['96950', '96951', '96952']);
+        expect(lookupByState('MH')).toHaveLength(2);
+    });
+
     it('accepts strings, numbers, ZIP+4 and padding', () => {
         const hills = lookup('90210');
         expect(lookup(90210)).toBe(hills);

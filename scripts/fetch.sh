@@ -1,16 +1,18 @@
 #!/bin/bash
 # Downloads the upstream sources and rebuilds data/zipcodes.tsv.
 #
-#   USPS_RELEASE=2025-06 ./scripts/fetch.sh
+#   USPS_RELEASE=2026-10 ./scripts/fetch.sh
 #
-# USPS publishes ZIP_Locale_Detail.xls under a YYYY-MM folder; see
-# https://postalpro.usps.com/ZIP_Locale_Detail for the current one.
+# USPS publishes Zip_Locale_Detail.xlsx (ZIP_Locale_Detail.xls before 2026)
+# under a YYYY-MM folder; see https://postalpro.usps.com/ZIP_Locale_Detail for
+# the current one.
 
 set -euo pipefail
 
 cd "$(dirname "$0")"
 
-USPS_RELEASE="${USPS_RELEASE:-2025-06}"
+USPS_RELEASE="${USPS_RELEASE:-2026-10}"
+USPS_BASE="https://postalpro.usps.com/mnt/glusterfs/$USPS_RELEASE"
 GEONAMES_FILES=(US GU VI PR AS MP)
 
 for tool in curl unzip node; do
@@ -21,7 +23,7 @@ for tool in curl unzip node; do
 done
 
 cleanup() {
-    rm -f ./ZIP_Locale_Detail.xls
+    rm -f ./ZIP_Locale_Detail.xls ./ZIP_Locale_Detail.xlsx
     for country in "${GEONAMES_FILES[@]}"; do
         rm -f "./$country.zip" "./$country.txt"
     done
@@ -35,8 +37,8 @@ for country in "${GEONAMES_FILES[@]}"; do
 done
 
 echo "Fetching USPS ZIP_Locale_Detail ($USPS_RELEASE)"
-curl -fsSL -o ZIP_Locale_Detail.xls \
-    "https://postalpro.usps.com/mnt/glusterfs/$USPS_RELEASE/ZIP_Locale_Detail.xls"
+curl -fsSL -o ZIP_Locale_Detail.xlsx "$USPS_BASE/Zip_Locale_Detail.xlsx" ||
+    curl -fsSL -o ZIP_Locale_Detail.xls "$USPS_BASE/ZIP_Locale_Detail.xls"
 
 echo "Processing"
 node ./update-data.mjs
