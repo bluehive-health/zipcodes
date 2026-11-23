@@ -38,7 +38,7 @@ A TypeScript rewrite. The existing API is unchanged, so most projects can upgrad
   whole state.
 - The build output moved from `lib/` to `dist/`. The old deep import paths (`lib/index.js`,
   `lib/states.js`, `lib/codes.js`) still resolve.
-- The dataset is now stored as `data/zipcodes.tsv`. The records are unchanged from 8.0.8.
+- The dataset is now stored as `data/zipcodes.tsv`.
 - `license` in `package.json` is now the SPDX identifier `BSD-3-Clause`. The license itself hasn't changed.
 - Tests moved from vows and istanbul to Vitest. The data scripts no longer need axios or wget.
 
