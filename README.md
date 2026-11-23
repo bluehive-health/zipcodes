@@ -46,9 +46,6 @@ var miles = zipcodes.toMiles(zipcodes.toKilometers(dist)); //Convert to Kilomete
 
 ### Lookup By Name
 
-
-*This does not work on the Canada data, the data file doesn't include this much detail.*
-
 ```
 var l = zipcodes.lookupByName('Cupertino', 'CA');
 

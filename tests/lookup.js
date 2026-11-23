@@ -43,28 +43,44 @@ var tests = {
             assert.equal(miami.state, 'FL');
         }
     },
-    'Kananaskis': {
-      topic: function() {
-        return zipcodes.lookup("T0L");
-      },
-      'should be ok': function(kananaskis) {
-        assert.equal(kananaskis.city, "Kananaskis Country (claresholm)");
-      }
-    },
-    'BC': {
-        topic: function() {
-          return zipcodes.lookup("V6B2Y9");
-        },
-        'should be ok': function(bc) {
-          assert.equal(bc.state, "British Columbia");
-        }
-    },
     'Beverly Hills': {
         topic: function() {
             return zipcodes.lookup(90210);
         },
         'should be ok': function(hills) {
             assert.equal(hills.city, 'Beverly Hills');
+        }
+    },
+    'Guam': {
+        topic: function() {
+            return zipcodes.lookup(96910);
+        },
+        'should have lat/lon and GU state': function(guam) {
+            assert.equal(guam.city, 'Hagatna');
+            assert.equal(guam.state, 'GU');
+            assert.equal(guam.country, 'US');
+            assert.isNumber(guam.latitude);
+            assert.isNumber(guam.longitude);
+        },
+        'should be found by state': function() {
+            assert.equal(zipcodes.lookupByState('GU').length, 21);
+            assert.equal(zipcodes.lookupByState('Guam').length, 21);
+        }
+    },
+    'US Virgin Islands': {
+        topic: function() {
+            return zipcodes.lookup('00801');
+        },
+        'should have lat/lon and VI state': function(vi) {
+            assert.equal(vi.city, 'St Thomas');
+            assert.equal(vi.state, 'VI');
+            assert.equal(vi.country, 'US');
+            assert.isNumber(vi.latitude);
+            assert.isNumber(vi.longitude);
+        },
+        'should be found by state': function() {
+            assert.equal(zipcodes.lookupByState('VI').length, 16);
+            assert.equal(zipcodes.lookupByState('Virgin Islands').length, 16);
         }
     },
     'distance': {
