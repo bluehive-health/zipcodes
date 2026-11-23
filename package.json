@@ -1,7 +1,7 @@
 {
   "name": "@bluehive-health/zipcodes",
   "description": "Useful zipcode database with helper methods (updated)",
-  "version": "8.0.6",
+  "version": "8.0.8",
   "author": "BlueHive Health (https://github.com/bluehive-health)",
   "contributors": [
     "Dav Glass <davglass@gmail.com>"
