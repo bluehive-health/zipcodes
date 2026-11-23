@@ -61,6 +61,26 @@ describe('lookup', () => {
         expect(lookupByState('Virgin Islands')).toHaveLength(16);
     });
 
+    it('covers Puerto Rico and the Pacific territories', () => {
+        expect(lookup('00601')).toMatchObject({ city: 'Adjuntas', state: 'PR' });
+        expect(lookupByState('PR')).toHaveLength(177);
+        expect(lookupByState('Puerto Rico')).toHaveLength(177);
+        expect(lookup(96799)).toMatchObject({ city: 'Pago Pago', state: 'AS' });
+        expect(lookupByState('American Samoa')).toHaveLength(1);
+        expect(lookupByState('Northern Mariana Islands').map((z) => z.zip)).toEqual(['96950', '96951', '96952']);
+        expect(lookupByState('MH')).toHaveLength(2);
+        expect(lookup(96940)).toMatchObject({ city: 'Palau', state: 'PW' });
+        expect(lookupByState('Palau')).toHaveLength(1);
+        expect(lookupByState('Micronesia').map((z) => z.zip)).toEqual(['96941', '96942', '96943', '96944']);
+        expect(lookupByState('Federated States of Micronesia')).toHaveLength(4);
+    });
+
+    it('uses the corrected coordinates from data/overrides.tsv', () => {
+        // GeoNames puts Vieques on the main island and all of Micronesia on one point.
+        expect(lookup('00765')).toMatchObject({ latitude: 18.1456, longitude: -65.4417 });
+        expect(distance('96943', '96944')).toBeGreaterThan(1500); // Yap to Kosrae
+    });
+
     it('accepts strings, numbers, ZIP+4 and padding', () => {
         const hills = lookup('90210');
         expect(lookup(90210)).toBe(hills);

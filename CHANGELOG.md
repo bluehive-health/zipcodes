@@ -19,6 +19,16 @@ A TypeScript rewrite. The existing API is unchanged, so most projects can upgrad
 - `lookupByState('Puerto Rico')` and `lookupByState('Marshall Islands')` work by full name.
 - `llms.txt`, `AGENTS.md`, a documentation site at <https://zipcodes.bluehive.com>, and CI on every pull request.
 
+### Data
+
+- Refreshed from the USPS release of October 2026: 41,203 ZIP codes, up from 41,025. No ZIP codes were removed.
+- Puerto Rico is now complete (177 ZIP codes, up from 9). American Samoa (1), the Northern Mariana
+  Islands (3), Palau (1) and the Federated States of Micronesia (4) are new, and `lookupByState` accepts
+  their names as well as `AS`, `MP`, `PW` and `FM`.
+- `data/zipcodes.tsv` is now sorted by ZIP code.
+- Coordinates for 00765 (Vieques, PR) and the four Micronesia ZIP codes are corrected in
+  `data/overrides.tsv`, which the data refresh applies.
+
 ### Changed
 
 - **Requires Node.js 18 or newer.**
