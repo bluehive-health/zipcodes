@@ -39,8 +39,9 @@ npm run website:build  # build the docs site (installs website dependencies firs
   upgrade section.
 - **No runtime dependencies.** `dependencies` in `package.json` stays empty.
 - **Never throw on bad input.** Lookups return `undefined`, `null` or `[]` as documented.
-- **Don't hand-edit the dataset** to fix one record without saying so in the PR; a data refresh
-  (`npm run data:update`) will keep it only if upstream agrees. Never edit `src/data.generated.ts`.
+- **Don't hand-edit `data/zipcodes.tsv`** to fix one record; a data refresh (`npm run data:update`) will
+  overwrite it. To correct a wrong upstream coordinate, add a row with the reason to `data/overrides.tsv`,
+  which the refresh applies, and say so in the PR. Never edit `src/data.generated.ts`.
 - **Keep the docs in step.** A change to the public API needs matching updates in: the JSDoc in
   `src/index.ts`, `README.md`, `llms.txt`, `website/src/content.ts` and `CHANGELOG.md`. Example output in
   docs must be real output: run the code and paste what it prints.

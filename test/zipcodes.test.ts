@@ -75,6 +75,12 @@ describe('lookup', () => {
         expect(lookupByState('Federated States of Micronesia')).toHaveLength(4);
     });
 
+    it('uses the corrected coordinates from data/overrides.tsv', () => {
+        // GeoNames puts Vieques on the main island and all of Micronesia on one point.
+        expect(lookup('00765')).toMatchObject({ latitude: 18.1456, longitude: -65.4417 });
+        expect(distance('96943', '96944')).toBeGreaterThan(1500); // Yap to Kosrae
+    });
+
     it('accepts strings, numbers, ZIP+4 and padding', () => {
         const hills = lookup('90210');
         expect(lookup(90210)).toBe(hills);

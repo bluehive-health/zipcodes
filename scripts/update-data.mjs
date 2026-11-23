@@ -11,6 +11,7 @@
 //      post office address.
 //   4. Records already in data/zipcodes.tsv that USPS still lists but GeoNames
 //      doesn't have (i.e. ZIP codes geocoded by an earlier run).
+// Coordinates in data/overrides.tsv then replace the upstream ones.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
@@ -159,6 +160,24 @@ for (const [zip, record] of existing) {
     }
 }
 
+// --- coordinate overrides ---------------------------------------------------
+
+// data/overrides.tsv holds hand-checked coordinates for ZIP codes where the
+// upstream value is known to be wrong. Each row says why.
+const overridesFile = new URL('../data/overrides.tsv', import.meta.url);
+let overridden = 0;
+for (const line of readFileSync(overridesFile, 'utf8').split('\n').slice(1)) {
+    if (!line) continue;
+    const [zip, latitude, longitude] = line.split('\t');
+    const record = zips.get(zip);
+    if (!record) {
+        console.warn(`Override for ${zip} skipped: not in the dataset.`);
+        continue;
+    }
+    zips.set(zip, { ...record, latitude: Number(latitude), longitude: Number(longitude) });
+    overridden++;
+}
+
 // --- write ------------------------------------------------------------------
 
 // Sorted by ZIP code so the file doesn't reshuffle when an upstream source
@@ -179,6 +198,6 @@ writeFileSync(
     HEADER + '\n' + valid.map((r) => [r.zip, r.latitude, r.longitude, r.city, r.state].join('\t')).join('\n') + '\n',
 );
 console.log(
-    `Wrote ${valid.length} ZIP codes (${geocoded} newly geocoded, ${retained} retained from earlier runs, ${zips.size - valid.length} dropped as malformed; ` +
+    `Wrote ${valid.length} ZIP codes (${geocoded} newly geocoded, ${retained} retained from earlier runs, ${overridden} overridden, ${zips.size - valid.length} dropped as malformed; ` +
         `previously ${existing.size}).`,
 );

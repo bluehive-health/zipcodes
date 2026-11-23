@@ -26,6 +26,8 @@ A TypeScript rewrite. The existing API is unchanged, so most projects can upgrad
   Islands (3), Palau (1) and the Federated States of Micronesia (4) are new, and `lookupByState` accepts
   their names as well as `AS`, `MP`, `PW` and `FM`.
 - `data/zipcodes.tsv` is now sorted by ZIP code.
+- Coordinates for 00765 (Vieques, PR) and the four Micronesia ZIP codes are corrected in
+  `data/overrides.tsv`, which the data refresh applies.
 
 ### Changed
 

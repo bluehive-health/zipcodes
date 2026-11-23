@@ -1,0 +1,6 @@
+zip	latitude	longitude	reason
+00765	18.1456	-65.4417	GeoNames puts Vieques on the main island of Puerto Rico. Census geocoder result for the Vieques post office.
+96941	6.9639	158.2081	GeoNames gives all four FM ZIP codes one shared point. Kolonia, Pohnpei.
+96942	7.44	151.8689	GeoNames gives all four FM ZIP codes one shared point. Weno, Chuuk.
+96943	9.5167	138.1333	GeoNames gives all four FM ZIP codes one shared point. Colonia, Yap.
+96944	5.3258	163.0086	GeoNames gives all four FM ZIP codes one shared point. Tofol, Kosrae.

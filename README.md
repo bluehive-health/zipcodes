@@ -303,6 +303,8 @@ interface CityMatch { city: string; state: string; zips: string[] }
   states and territories.
 - **Coordinates** are the approximate center of each ZIP code. They're good for distance estimates, store
   locators and "near me" search. They aren't delivery points or boundaries.
+- **Corrections:** five coordinates (Vieques, PR and the four Micronesia ZIP codes) are corrected by hand
+  in [`data/overrides.tsv`](data/overrides.tsv), because GeoNames has them wrong.
 - **Not included:** military APO/FPO/DPO ZIP codes and non-US postal codes.
 - The raw data is one tab-separated file, [`data/zipcodes.tsv`](data/zipcodes.tsv), which you can use from
   any language.
@@ -385,6 +387,9 @@ This downloads the USPS and GeoNames files, geocodes any new ZIP codes through t
 rewrites `data/zipcodes.tsv`. Check <https://postalpro.usps.com/ZIP_Locale_Detail> for the current
 `USPS_RELEASE` folder. Review the diff, run `npm test` (a few tests assert exact counts and may need
 updating), and update the "last refreshed" date in this README and in `website/src/content.ts`.
+
+Where an upstream coordinate is known to be wrong, [`data/overrides.tsv`](data/overrides.tsv) replaces it
+on every refresh. Each row gives the reason.
 
 ### Working on the website
 
