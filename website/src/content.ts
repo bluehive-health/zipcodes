@@ -17,8 +17,8 @@ export const site = {
     license: 'BSD-3-Clause',
     careers: 'https://mieweb.org/join-our-team/',
     bluehive: 'https://bluehive.com',
-    zipCount: 41198,
-    regionCount: 57,
+    zipCount: 41203,
+    regionCount: 59,
     dataUpdated: 'November 2026',
 } as const;
 
@@ -30,7 +30,7 @@ export const nav = [
 ] as const;
 
 export const highlights = [
-    { value: '41,198', label: 'ZIP codes' },
+    { value: '41,203', label: 'ZIP codes' },
     { value: '0', label: 'Dependencies' },
     { value: '36 ns', label: 'Per lookup' },
     { value: '538 kB', label: 'Install size (packed)' },
@@ -47,11 +47,11 @@ export const features = [
     },
     {
         title: 'Fast',
-        body: 'A single lookup takes about 36 nanoseconds. A 50 mile radius search across all 41,198 ZIP codes takes about 0.2 milliseconds.',
+        body: 'A single lookup takes about 36 nanoseconds. A 50 mile radius search across all 41,203 ZIP codes takes about 0.2 milliseconds.',
     },
     {
         title: 'Covers the territories',
-        body: 'All 50 states and Washington DC, plus Puerto Rico, Guam, the US Virgin Islands, American Samoa, the Northern Mariana Islands and the Marshall Islands. Military (APO/FPO) ZIP codes are not included.',
+        body: 'All 50 states and Washington DC, plus Puerto Rico, Guam, the US Virgin Islands, American Samoa, the Northern Mariana Islands, the Marshall Islands, Palau and Micronesia. Military (APO/FPO) ZIP codes are not included.',
     },
     {
         title: 'Forgiving input',
@@ -231,7 +231,7 @@ haversine(40.7484, -73.9967, 34.0901, -118.4065); // 2453.2`,
         signature:
             'codes: Record<string, ZipCode>\nstates.normalize(state: string): string | undefined\nstates.abbr: Record<string, string>\nstates.full: Record<string, string>',
         summary: 'Direct access to the whole dataset and to the state name helpers.',
-        example: `Object.keys(codes).length;         // 41198
+        example: `Object.keys(codes).length;         // 41203
 states.normalize('Rhode Island');  // 'RI'
 states.abbr.RI;                    // 'RHODE ISLAND'`,
     },
@@ -265,7 +265,7 @@ export const faq = [
     },
     {
         q: 'Does it need an API key or an internet connection?',
-        a: 'No. The full dataset of 41,198 ZIP codes is bundled in the npm package. Every function is synchronous and runs locally, so it works offline, in CI and in serverless functions with no rate limits.',
+        a: 'No. The full dataset of 41,203 ZIP codes is bundled in the npm package. Every function is synchronous and runs locally, so it works offline, in CI and in serverless functions with no rate limits.',
     },
     {
         q: 'Does it work with TypeScript, ES modules and CommonJS?',
@@ -281,7 +281,7 @@ export const faq = [
     },
     {
         q: 'Which places are covered?',
-        a: 'All 50 states and Washington DC, plus Puerto Rico, Guam, the US Virgin Islands, American Samoa, the Northern Mariana Islands and the Marshall Islands. Military APO/FPO ZIP codes and non-US postal codes are not included.',
+        a: 'All 50 states and Washington DC, plus Puerto Rico, Guam, the US Virgin Islands, American Samoa, the Northern Mariana Islands, the Marshall Islands, Palau and Micronesia. Military APO/FPO ZIP codes and non-US postal codes are not included.',
     },
     {
         q: 'Is it free for commercial use?',

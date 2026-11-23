@@ -3,11 +3,12 @@
 // which downloads the inputs into this directory first.
 //
 // Sources, in priority order:
-//   1. USPS ZIP_Locale_Detail.xlsx: ZIP codes we don't have yet are geocoded
-//      through the US Census Bureau geocoder using the post office address.
-//   2. GeoNames US.txt, the bulk of the dataset.
-//   3. GeoNames territory files (GU, VI, PR, AS, MP), which are published as
+//   1. GeoNames US.txt, the bulk of the dataset.
+//   2. GeoNames territory files (GU, VI, PR, AS, MP, PW, FM), which are published as
 //      separate country files.
+//   3. USPS ZIP_Locale_Detail.xlsx: ZIP codes that GeoNames lacks and we don't
+//      have yet are geocoded through the US Census Bureau geocoder using the
+//      post office address.
 //   4. Records already in data/zipcodes.tsv that USPS still lists but GeoNames
 //      doesn't have (i.e. ZIP codes geocoded by an earlier run).
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
@@ -42,7 +43,7 @@ for (const line of readFileSync(dataFile, 'utf8').split('\n').slice(1)) {
 
 const zips = new Map();
 
-// --- 2. USPS + Census geocoder ----------------------------------------------
+// --- USPS rows and the Census geocoder ----------------------------------------------
 
 async function geocode(row) {
     const address = `${row['PHYSICAL DELV ADDR']} ${row['PHYSICAL CITY']} ${row['DELIVERY ZIPCODE']}`;
@@ -92,24 +93,7 @@ for (const row of rows) {
     }
     row['DELIVERY ZIPCODE'] = String(row['DELIVERY ZIPCODE']).trim().padStart(5, '0');
 }
-const missing = rows.filter((row) => !existing.has(row['DELIVERY ZIPCODE']));
-console.log(`${missing.length} USPS rows are not in the dataset yet; geocoding…`);
-
-for (let i = 0; i < missing.length; i += REQUESTS_PER_SECOND) {
-    const batch = missing.slice(i, i + REQUESTS_PER_SECOND);
-    const [results] = await Promise.all([
-        Promise.all(batch.map(geocode)),
-        new Promise((resolve) => setTimeout(resolve, 1000)),
-    ]);
-    for (const record of results) {
-        if (record) {
-            zips.set(record.zip, record);
-        }
-    }
-}
-const geocoded = zips.size;
-
-// --- 3 & 4. GeoNames --------------------------------------------------------
+// --- 2 & 3. GeoNames --------------------------------------------------------
 
 // `state` overrides the admin code column, which is a FIPS code (not a USPS
 // abbreviation) in the territory files.
@@ -140,6 +124,30 @@ mergeGeonames('VI.txt', 'VI');
 mergeGeonames('PR.txt', 'PR');
 mergeGeonames('AS.txt', 'AS');
 mergeGeonames('MP.txt', 'MP');
+mergeGeonames('PW.txt', 'PW');
+mergeGeonames('FM.txt', 'FM');
+
+// --- Census geocoder for what GeoNames lacks ----------------------------------
+
+// Only ZIP codes that neither GeoNames nor an earlier run has coordinates for,
+// so running the refresh twice gives the same file.
+const missing = rows.filter((row) => !zips.has(row['DELIVERY ZIPCODE']) && !existing.has(row['DELIVERY ZIPCODE']));
+console.log(`${missing.length} USPS rows have no coordinates yet; geocoding…`);
+
+let geocoded = 0;
+for (let i = 0; i < missing.length; i += REQUESTS_PER_SECOND) {
+    const batch = missing.slice(i, i + REQUESTS_PER_SECOND);
+    const [results] = await Promise.all([
+        Promise.all(batch.map(geocode)),
+        new Promise((resolve) => setTimeout(resolve, 1000)),
+    ]);
+    for (const record of results) {
+        if (record && !zips.has(record.zip)) {
+            zips.set(record.zip, record);
+            geocoded++;
+        }
+    }
+}
 
 // Keep earlier geocoding results for ZIP codes USPS still lists.
 const uspsZips = new Set(rows.map((row) => row['DELIVERY ZIPCODE']));

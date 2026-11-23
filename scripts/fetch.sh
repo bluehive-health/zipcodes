@@ -13,7 +13,7 @@ cd "$(dirname "$0")"
 
 USPS_RELEASE="${USPS_RELEASE:-2026-10}"
 USPS_BASE="https://postalpro.usps.com/mnt/glusterfs/$USPS_RELEASE"
-GEONAMES_FILES=(US GU VI PR AS MP)
+GEONAMES_FILES=(US GU VI PR AS MP PW FM)
 
 for tool in curl unzip node; do
     if ! command -v "$tool" >/dev/null; then

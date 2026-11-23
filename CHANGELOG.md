@@ -21,9 +21,10 @@ A TypeScript rewrite. The existing API is unchanged, so most projects can upgrad
 
 ### Data
 
-- Refreshed from the USPS release of October 2026: 41,198 ZIP codes, up from 41,025. No ZIP codes were removed.
-- Puerto Rico is now complete (177 ZIP codes, up from 9). American Samoa (1) and the Northern Mariana
-  Islands (3) are new, and `lookupByState` accepts their names as well as `AS` and `MP`.
+- Refreshed from the USPS release of October 2026: 41,203 ZIP codes, up from 41,025. No ZIP codes were removed.
+- Puerto Rico is now complete (177 ZIP codes, up from 9). American Samoa (1), the Northern Mariana
+  Islands (3), Palau (1) and the Federated States of Micronesia (4) are new, and `lookupByState` accepts
+  their names as well as `AS`, `MP`, `PW` and `FM`.
 - `data/zipcodes.tsv` is now sorted by ZIP code.
 
 ### Changed

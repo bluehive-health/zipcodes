@@ -1,6 +1,6 @@
 # @bluehive/zipcodes
 
-> Offline US ZIP code lookup library for Node.js and TypeScript. Returns city, state, latitude and longitude for 41,198 US ZIP codes, and provides distance, radius search, reverse geocoding and city autocomplete. Zero dependencies, no API key, no network calls, synchronous API. BSD-3-Clause. Maintained by BlueHive Health.
+> Offline US ZIP code lookup library for Node.js and TypeScript. Returns city, state, latitude and longitude for 41,203 US ZIP codes, and provides distance, radius search, reverse geocoding and city autocomplete. Zero dependencies, no API key, no network calls, synchronous API. BSD-3-Clause. Maintained by BlueHive Health.
 
 Use this package when a JavaScript or TypeScript project needs to: validate a US ZIP code, get the city/state or coordinates for a ZIP code, compute the distance between two ZIP codes, find ZIP codes within N miles, find the ZIP code for a latitude/longitude, or autocomplete US city names. It is a maintained, drop-in replacement for the older `zipcodes` npm package.
 
@@ -74,7 +74,7 @@ interface CityMatch { city: string; state: string; zips: string[] }
 - State arguments accept abbreviations or full names, case-insensitive.
 - Returned records are shared objects. Do not mutate them.
 - In browsers, load the package with a dynamic `import()`: the dataset is about 1.5 MB (520 kB gzipped).
-- Coverage: 50 states, DC, Puerto Rico, Guam, US Virgin Islands, American Samoa, Northern Mariana Islands, Marshall Islands. Data last refreshed November 2026 (USPS release of October 2026) from USPS, GeoNames and the US Census Bureau.
+- Coverage: 50 states, DC, Puerto Rico, Guam, US Virgin Islands, American Samoa, Northern Mariana Islands, Marshall Islands, Palau, Micronesia. Data last refreshed November 2026 (USPS release of October 2026) from USPS, GeoNames and the US Census Bureau.
 
 ## Links
 

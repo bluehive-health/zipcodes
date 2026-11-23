@@ -61,7 +61,7 @@ describe('lookup', () => {
         expect(lookupByState('Virgin Islands')).toHaveLength(16);
     });
 
-    it('covers Puerto Rico, American Samoa and the Northern Mariana Islands', () => {
+    it('covers Puerto Rico and the Pacific territories', () => {
         expect(lookup('00601')).toMatchObject({ city: 'Adjuntas', state: 'PR' });
         expect(lookupByState('PR')).toHaveLength(177);
         expect(lookupByState('Puerto Rico')).toHaveLength(177);
@@ -69,6 +69,10 @@ describe('lookup', () => {
         expect(lookupByState('American Samoa')).toHaveLength(1);
         expect(lookupByState('Northern Mariana Islands').map((z) => z.zip)).toEqual(['96950', '96951', '96952']);
         expect(lookupByState('MH')).toHaveLength(2);
+        expect(lookup(96940)).toMatchObject({ city: 'Palau', state: 'PW' });
+        expect(lookupByState('Palau')).toHaveLength(1);
+        expect(lookupByState('Micronesia').map((z) => z.zip)).toEqual(['96941', '96942', '96943', '96944']);
+        expect(lookupByState('Federated States of Micronesia')).toHaveLength(4);
     });
 
     it('accepts strings, numbers, ZIP+4 and padding', () => {

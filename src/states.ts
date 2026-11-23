@@ -58,7 +58,10 @@ export const full: Record<string, string> = {
     'PUERTO RICO': 'PR',
     'MARSHALL ISLANDS': 'MH',
     'AMERICAN SAMOA': 'AS',
-    'NORTHERN MARIANA ISLANDS': 'MP'
+    'NORTHERN MARIANA ISLANDS': 'MP',
+    'PALAU': 'PW',
+    'MICRONESIA': 'FM',
+    'FEDERATED STATES OF MICRONESIA': 'FM'
 };
 
 /**
