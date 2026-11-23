@@ -37,8 +37,12 @@ for country in "${GEONAMES_FILES[@]}"; do
 done
 
 echo "Fetching USPS ZIP_Locale_Detail ($USPS_RELEASE)"
-curl -fsSL -o ZIP_Locale_Detail.xlsx "$USPS_BASE/Zip_Locale_Detail.xlsx" ||
+if ! curl -fsSL -o ZIP_Locale_Detail.xlsx "$USPS_BASE/Zip_Locale_Detail.xlsx"; then
+    # A failed download can leave a partial file, which update-data.mjs would
+    # pick over the .xls fallback.
+    rm -f ZIP_Locale_Detail.xlsx
     curl -fsSL -o ZIP_Locale_Detail.xls "$USPS_BASE/ZIP_Locale_Detail.xls"
+fi
 
 echo "Processing"
 node ./update-data.mjs
