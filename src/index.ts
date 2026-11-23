@@ -255,14 +255,15 @@ export function lookupByName(city: string, state: string): ZipCode[] {
  * search('san fr');                  // [{ city: 'San Francisco', state: 'CA', zips: [...] }, ...]
  * search('spring', { state: 'IL' }); // only Illinois
  */
-export function search(query: string, options: SearchOptions = {}): CityMatch[] {
+export function search(query: string, options?: SearchOptions | null): CityMatch[] {
+    options = options ?? {};
     const prefix = typeof query === 'string' ? query.trim().toUpperCase() : '';
     const limit = options.limit ?? 10;
     if (!prefix || limit <= 0) {
         return [];
     }
     let state: string | undefined;
-    if (options.state !== undefined) {
+    if (options.state != null) {
         state = resolveState(options.state);
         if (state === undefined) {
             return [];
@@ -343,9 +344,11 @@ export function distance(zipA: ZipInput, zipB: ZipInput): number | null {
 export function haversine(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const dLat = (lat2 - lat1) * DEG_TO_RAD;
     const dLon = (lon2 - lon1) * DEG_TO_RAD;
-    const a =
+    const raw =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(lat1 * DEG_TO_RAD) * Math.cos(lat2 * DEG_TO_RAD);
+    // Rounding error can push this a hair past 1 for antipodal points.
+    const a = Math.min(1, Math.max(0, raw));
     return EARTH_RADIUS_MILES * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 

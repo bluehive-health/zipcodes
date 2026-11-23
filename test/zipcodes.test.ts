@@ -129,6 +129,13 @@ describe('distance', () => {
         expect(haversine(40.7484, -73.9967, 40.7484, -73.9967)).toBe(0);
         expect(Math.round(haversine(40.7484, -73.9967, 34.0901, -118.4065))).toBe(2453);
     });
+
+    it('stays finite for antipodal coordinates', () => {
+        const d = haversine(-40.7143, 105.994, 40.7143, -74.006);
+        expect(Number.isFinite(d)).toBe(true);
+        // Half the circumference of the sphere the library uses.
+        expect(d).toBeCloseTo(Math.PI * 3958.56540656, 3);
+    });
 });
 
 describe('lookupByName', () => {
@@ -241,6 +248,8 @@ describe('search', () => {
         expect(il.every((m) => m.state === 'IL')).toBe(true);
         expect(search('spring', { state: 'foobar' })).toEqual([]);
         expect(search('')).toEqual([]);
+        expect(search('san fr', null)[0]?.city).toBe('San Francisco');
+        expect(search('san fr', { state: null as never, limit: undefined })[0]?.city).toBe('San Francisco');
         expect(search('zzzzzz')).toEqual([]);
     });
 });

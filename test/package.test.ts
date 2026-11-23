@@ -36,6 +36,19 @@ import { fileURLToPath } from 'node:url';
         });
     });
 
+    it('has ESM typings that match the ESM runtime', () => {
+        const root = fileURLToPath(new URL('..', import.meta.url));
+        const tsc = require.resolve('typescript/bin/tsc');
+        // Throws (failing the test) with the compiler output if the fixture doesn't type-check.
+        execFileSync(process.execPath, [tsc, '-p', 'test/types/tsconfig.json'], { cwd: root, stdio: 'pipe' });
+        const out = execFileSync(
+            process.execPath,
+            ['--input-type=module', '-e', `import z from '${pkg.name}'; console.log(typeof z.lookup, typeof z.default)`],
+            { cwd: root, encoding: 'utf8' },
+        );
+        expect(out.trim()).toBe('function undefined');
+    });
+
     it('keeps the pre-9 deep import paths working', () => {
         const self = pkg.name;
         expect(require(`${self}/lib/index.js`)).toBe(require('..'));

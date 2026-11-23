@@ -28,7 +28,11 @@ env:
 jobs:
   deploy:
     # Pre-releases publish to the `next` dist-tag; they don't update the public docs.
-    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    # Like publish.yml, treat a hyphenated tag (v9.1.0-beta.1) as a pre-release even
+    # when the release's pre-release box wasn't ticked.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (!github.event.release.prerelease && !contains(github.event.release.tag_name, '-'))
     runs-on: ubuntu-latest
     permissions:
       contents: read

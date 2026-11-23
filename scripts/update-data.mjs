@@ -59,7 +59,7 @@ async function geocode(row) {
             return undefined;
         }
         return {
-            zip: String(row['DELIVERY ZIPCODE']),
+            zip: row['DELIVERY ZIPCODE'],
             latitude: match.coordinates.y,
             longitude: match.coordinates.x,
             city: ucfirst(row['PHYSICAL CITY']),
@@ -73,7 +73,12 @@ async function geocode(row) {
 
 const workbook = xlsx.readFile(new URL('ZIP_Locale_Detail.xls', here).pathname);
 const rows = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-const missing = rows.filter((row) => !existing.has(String(row['DELIVERY ZIPCODE'])));
+// Spreadsheet cells can come back as numbers, which lose their leading zeros
+// (801 instead of '00801'). Normalize once so every later step sees dataset keys.
+for (const row of rows) {
+    row['DELIVERY ZIPCODE'] = String(row['DELIVERY ZIPCODE']).trim().padStart(5, '0');
+}
+const missing = rows.filter((row) => !existing.has(row['DELIVERY ZIPCODE']));
 console.log(`${missing.length} USPS rows are not in the dataset yet; geocoding…`);
 
 for (let i = 0; i < missing.length; i += REQUESTS_PER_SECOND) {
@@ -123,7 +128,7 @@ mergeGeonames('AS.txt', 'AS');
 mergeGeonames('MP.txt', 'MP');
 
 // Keep earlier geocoding results for ZIP codes USPS still lists.
-const uspsZips = new Set(rows.map((row) => String(row['DELIVERY ZIPCODE'])));
+const uspsZips = new Set(rows.map((row) => row['DELIVERY ZIPCODE']));
 let retained = 0;
 for (const [zip, record] of existing) {
     if (!zips.has(zip) && uspsZips.has(zip)) {
