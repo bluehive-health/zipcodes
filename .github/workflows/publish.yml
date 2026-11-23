@@ -4,7 +4,7 @@ name: Publish package
 # Publishing release `v1.2.3` (or `1.2.3`) publishes version 1.2.3, regardless of
 # the version currently committed in package.json, to both registries:
 #   - GitHub Packages: @bluehive-health/zipcodes (the name in package.json)
-#   - npmjs.com:       @bluehive/zipcodes
+#   - npmjs.com:       @bluehive/zipcodes (staged: a maintainer must approve it on npmjs)
 # A registry that already has the version is skipped, so a failed run can be retried.
 
 on:
@@ -84,22 +84,12 @@ jobs:
           ref: refs/tags/${{ env.TAG }}
 
       # npmjs gets its own npm config so the GitHub Packages registry/auth from
-      # setup-node never applies to it. Auth uses npm trusted publishing (OIDC);
-      # if an NPM_TOKEN secret is set, it is used instead.
+      # setup-node never applies to it. Auth is npm trusted publishing (OIDC),
+      # configured on npmjs to allow `npm stage publish` only.
       - name: Write npmjs config
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           NPMRC="$RUNNER_TEMP/npmjs.npmrc"
-          {
-            echo "registry=https://registry.npmjs.org/"
-            echo "@bluehive:registry=https://registry.npmjs.org/"
-            if [[ -n "$NPM_TOKEN" ]]; then
-              # Literal ${NPM_TOKEN}: npm expands it at runtime, so the secret never hits disk.
-              # shellcheck disable=SC2016
-              echo '//registry.npmjs.org/:_authToken=${NPM_TOKEN}'
-            fi
-          } > "$NPMRC"
+          printf '%s\n' "registry=https://registry.npmjs.org/" "@bluehive:registry=https://registry.npmjs.org/" > "$NPMRC"
           echo "NPMJS_USERCONFIG=$NPMRC" >> "$GITHUB_ENV"
 
       - name: Check which registries already have this version
@@ -141,17 +131,32 @@ jobs:
           DIST_TAG: ${{ steps.version.outputs.dist_tag }}
         run: npm publish --tag "$DIST_TAG"
 
-      # Same tarball contents, published under the npmjs name. publishConfig is
-      # removed because it pins the registry to GitHub Packages.
-      - name: Publish to npmjs
+      # Same tarball contents, under the npmjs name. publishConfig is removed
+      # because it pins the registry to GitHub Packages. The trusted publisher
+      # only allows staging: the version goes live once a maintainer approves it.
+      - name: Stage on npmjs
         if: steps.existing.outputs.npmjs != 'true'
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           DIST_TAG: ${{ steps.version.outputs.dist_tag }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
+          set -o pipefail # so a failed stage publish isn't masked by tee
           npm pkg set name="$NPMJS_NAME"
           npm pkg delete publishConfig
-          NPM_CONFIG_USERCONFIG="$NPMJS_USERCONFIG" npm publish --access public --provenance --tag "$DIST_TAG"
+          NPM_CONFIG_USERCONFIG="$NPMJS_USERCONFIG" npm stage publish --access public --provenance --tag "$DIST_TAG" 2>&1 | tee "$RUNNER_TEMP/stage.log"
+          {
+            echo "### npmjs: $NPMJS_NAME@$VERSION is staged and waiting for approval"
+            echo
+            echo "A maintainer must approve it before it is published (requires 2FA):"
+            echo
+            echo "- on npmjs.com: https://www.npmjs.com/package/$NPMJS_NAME (staged versions), or"
+            echo "- from a terminal: \`npm stage list $NPMJS_NAME\`, then \`npm stage approve <stage-id>\`"
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/stage.log"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice title=npmjs approval needed::$NPMJS_NAME@$VERSION is staged on npmjs. Approve it with 'npm stage approve' or on npmjs.com."
 
       # master is protected, so instead of pushing directly we open a PR that
       # syncs package.json with what was just published. Best effort: a failure

@@ -169,21 +169,31 @@ The **release tag decides the published version**: the workflow sets `package.js
 2. Create a GitHub release with the tag `v8.0.7` (format `vX.Y.Z`; a bare `X.Y.Z` also works).
    Mark it as a pre-release, or use a tag like `v9.0.0-beta.1`, to publish under the `next`
    dist-tag instead of `latest`.
-3. The workflow validates the tag, checks both registries, runs the tests, and publishes to each
-   registry that doesn't have the version yet. It fails early only if both already have it.
-4. If `package.json` on `master` is behind, the workflow opens a `chore: bump version to X.Y.Z`
+3. The workflow validates the tag, checks both registries, runs the tests, publishes to GitHub
+   Packages, and **stages** the version on npmjs. It skips a registry that already has the version
+   and fails early only if both do.
+4. Approve the staged version on npmjs (see below).
+5. If `package.json` on `master` is behind, the workflow opens a `chore: bump version to X.Y.Z`
    PR. Merge it to keep the repo in sync.
 
 To publish an existing tag again after a failed run (for example, after fixing the workflow), run the
 **Publish package** workflow manually from the Actions tab and enter the tag. Registries that already
 have that version are skipped.
 
-### npmjs authentication
+### npmjs: staged publishing
 
-The npmjs publish uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC), so no
-long-lived token is stored, and every release gets a provenance attestation. A maintainer of
-`@bluehive/zipcodes` must set this up once on npmjs.com: **package Settings → Trusted publishing →
-GitHub Actions**, with organization `bluehive-health`, repository `zipcodes` and workflow `publish.yml`.
+The npmjs release uses [npm trusted publishing](https://docs.npmjs.com/trusted-publishers) (OIDC): no
+token is stored, and every release gets a provenance attestation. The trusted publisher for
+`@bluehive/zipcodes` (repository `bluehive-health/zipcodes`, workflow `publish.yml`) is allowed to
+**stage** versions only. A new version doesn't go live on npmjs until a maintainer approves it with 2FA:
 
-Alternatively, add an npmjs granular access token (publish rights for `@bluehive/zipcodes`) as the repo
-secret `NPM_TOKEN`; when it is set, the workflow uses it instead.
+- on npmjs.com, from the package's staged versions, or
+- from a terminal:
+
+  ```
+  npm stage list @bluehive/zipcodes
+  npm stage approve <stage-id>
+  ```
+
+The workflow run's summary shows the staged version and these steps. GitHub Packages is not staged; it
+publishes immediately.
